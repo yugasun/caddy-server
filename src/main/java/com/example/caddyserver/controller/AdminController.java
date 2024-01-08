@@ -1,9 +1,11 @@
 package com.example.caddyserver.controller;
 
 import com.example.caddyserver.dto.DomainDto;
+import com.example.caddyserver.service.ApiProxyService;
 import org.apache.commons.text.StringSubstitutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
@@ -11,11 +13,11 @@ import org.springframework.core.io.Resource;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -26,6 +28,9 @@ import java.util.Map;
 @RequestMapping("/admin")
 public class AdminController {
     private final Logger logger = LoggerFactory.getLogger(AdminController.class);
+
+    @Autowired
+    private ApiProxyService apiProxyService;
 
     @Value("${caddy.reload.command:echo reload}")
     private String CADDY_RELOAD_COMMAND;
@@ -57,6 +62,11 @@ public class AdminController {
 
         domainDto.name = domainDto.name != null && !domainDto.name.isEmpty() ? domainDto.name : domainDto.domain;
 
+        // check domain exist
+        if (isDomainExist(domainDto.domain)) {
+            return Map.of("result", "domain exist");
+        }
+
         Boolean updateResult = updateCaddyfile(domainDto.domain, domainDto.ip, domainDto.port, domainDto.name, domainDto.larkAuth);
         if (!updateResult) {
             reloadConfig();
@@ -66,16 +76,20 @@ public class AdminController {
     }
 
     @GetMapping("/domain")
-    public Map<String, String> getDomain() {
+    public Map<String, List<String>> getDomain() {
         logger.info("get domain");
-        String content = getCaddyfileContent();
-        return Map.of("result", content);
+        return apiProxyService.getHosts();
     }
 
     @GetMapping("/caddy/file")
     public Map<String, String> getCaddyFile() {
         logger.info("get caddy file");
         return Map.of("result", caddyfilePath);
+    }
+
+    private Boolean isDomainExist(String domain) {
+        List<String> domains = apiProxyService.getHosts().get("result");
+        return domains != null && domains.contains(domain);
     }
 
     private Boolean updateCaddyfile(String domain, String ip, String port, String name, Boolean isLarkAuth) {
@@ -129,7 +143,7 @@ public class AdminController {
     }
 
     private String getResourcePathPrefix() {
-        Resource resource = new ClassPathResource("application.properties");
+        Resource resource = new ClassPathResource("application.yml");
         try {
             return resource.getFile().getParentFile().getAbsolutePath();
         } catch (IOException e) {

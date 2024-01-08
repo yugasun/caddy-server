@@ -1,0 +1,12 @@
+spring:
+  security:
+    user:
+      name: admin
+      password: admin
+
+caddy:
+  api: http://localhost:2019
+  reload:
+    command: echo "caddy reload"
+  file:
+    path: ./config/Caddyfile

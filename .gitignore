@@ -33,3 +33,5 @@ build/
 .vscode/
 
 Caddyfile
+
+application.local.yml

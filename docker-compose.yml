@@ -1,12 +1,17 @@
 version: '3.8'
 services:
   app:
-    image: yugasun/caddy-server:latest
+    image: devops/caddy-server:latest
+    container_name: caddy-server
     build:
       context: .
       dockerfile: Dockerfile
 
-#    entrypoint: tail -f /dev/null
+    volumes:
+        - ./config:/app/config
 
+    privileged: true
+    pid: host
+    ipc: host
     ports:
       - "8080:8080"
