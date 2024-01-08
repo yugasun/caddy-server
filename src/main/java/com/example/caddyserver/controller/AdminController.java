@@ -72,6 +72,12 @@ public class AdminController {
         return Map.of("result", content);
     }
 
+    @GetMapping("/caddy/file")
+    public Map<String, String> getCaddyFile() {
+        logger.info("get caddy file");
+        return Map.of("result", caddyfilePath);
+    }
+
     private Boolean updateCaddyfile(String domain, String ip, String port, String name, Boolean isLarkAuth) {
         // initialize domain config
         Map<String, String> valuesMap = new HashMap<>();
@@ -101,6 +107,15 @@ public class AdminController {
 
     private String getCaddyfileContent() {
         Resource resource = new FileSystemResource(caddyfilePath);
+        // if file not exit create it
+        if (!resource.exists()) {
+            try {
+                resource.getFile().createNewFile();
+            } catch (IOException e) {
+                logger.error("create caddyfile error", e);
+                return "";
+            }
+        }
         try (InputStream is = resource.getInputStream()) {
             // 读取和处理资源内容
             byte[] data = FileCopyUtils.copyToByteArray(is);
