@@ -170,8 +170,8 @@ public class AdminController {
         logger.info("reload config");
         // exec command
         String command = CADDY_RELOAD_COMMAND;
-        logger.info("exec command: {}", command);
         try {
+            logger.info("exec command: {}", command);
             Process process = Runtime.getRuntime().exec(command);
             process.waitFor();
             logger.info("exec command success");

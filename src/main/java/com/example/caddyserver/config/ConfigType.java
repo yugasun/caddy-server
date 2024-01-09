@@ -17,46 +17,46 @@ public enum ConfigType {
     public static String getConfig(ConfigType type) {
         return switch (type) {
             case RESERVE_PROXY -> """
-                     ${domain} {
-                                    import favicon
-                                    import encode
-                                    import cache
-                                    import logs ${name}
-                                    ${larkAuth}
-                                        
-                                    handle /* {
-                                        reverse_proxy http://${ip}:${port} {
-                                            header_up Host {host}
-                                            header_up X-Real-IP {remote_host}
-                                        }
-                                    }
+                    ${domain} {
+                        import favicon
+                        import encode
+                        import cache
+                        import logs ${name}
+                        ${larkAuth}
+                            
+                        handle /* {
+                            reverse_proxy http://${ip}:${port} {
+                                header_up Host {host}
+                                header_up X-Real-IP {remote_host}
+                            }
+                        }
                     }
-                    """;
+                                        """;
             case CUSTOM_RESPOND -> """
-                     ${domain} {
-                                    import favicon
-                                    import encode
-                                    import cache
-                                    import logs ${name}
-                                    ${larkAuth}
-                                        
-                                    handle /* {
-                                        respond "${respond}"
-                                    }
+                    ${domain} {
+                        import favicon
+                        import encode
+                        import cache
+                        import logs ${name}
+                        ${larkAuth}
+                            
+                        handle /* {
+                            respond "${respond}"
+                        }
                     }
-                    """;
+                                """;
             case FILE_SERVER -> """
                     ${domain} {
-                                     import favicon
-                                     import encode
-                                     import cache
-                                     import logs ${name}
-                                     ${larkAuth}
-                                         
-                                     handle /* {
-                                            root * ${root}
-                                            file_server
-                                     }
+                         import favicon
+                         import encode
+                         import cache
+                         import logs ${name}
+                         ${larkAuth}
+                             
+                         handle /* {
+                                root * ${root}
+                                file_server
+                         }
                      }
                      """;
             default -> throw new IllegalStateException("Unexpected value: " + type);
