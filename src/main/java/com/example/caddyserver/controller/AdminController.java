@@ -81,6 +81,12 @@ public class AdminController {
         return apiProxyService.getHosts();
     }
 
+    @GetMapping("/reload")
+    public Map<String, String> reload() {
+        logger.info("reload");
+        return Map.of("result", reloadConfig());
+    }
+
     @GetMapping("/caddy/file")
     public Map<String, String> getCaddyFile() {
         logger.info("get caddy file");
