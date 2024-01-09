@@ -1,5 +1,6 @@
 package com.example.caddyserver.controller;
 
+import com.example.caddyserver.config.ConfigType;
 import com.example.caddyserver.dto.DomainDto;
 import com.example.caddyserver.service.ApiProxyService;
 import org.apache.commons.text.StringSubstitutor;
@@ -38,24 +39,6 @@ public class AdminController {
     @Value("${caddy.file.path}")
     private String caddyfilePath;
 
-    private static final String DOMAIN_CONFIG_TEMPLATE = """
-
-            ${domain} {
-                import favicon
-                import encode
-                import cache
-                import logs ${name}
-                ${larkAuth}
-
-                handle /* {
-                    reverse_proxy http://${ip}:${port} {
-                        header_up Host {host}
-                        header_up X-Real-IP {remote_host}
-                    }
-                }
-            }
-            """;
-
     @PostMapping("/domain")
     public Map<String, String> addDomain(@RequestBody DomainDto domainDto) {
         logger.info("add domain: {}", domainDto);
@@ -67,7 +50,7 @@ public class AdminController {
             return Map.of("result", "domain exist");
         }
 
-        Boolean updateResult = updateCaddyfile(domainDto.domain, domainDto.ip, domainDto.port, domainDto.name, domainDto.larkAuth);
+        Boolean updateResult = updateCaddyfile(domainDto);
         if (!updateResult) {
             reloadConfig();
         }
@@ -98,20 +81,12 @@ public class AdminController {
         return domains != null && domains.contains(domain);
     }
 
-    private Boolean updateCaddyfile(String domain, String ip, String port, String name, Boolean isLarkAuth) {
+    private Boolean updateCaddyfile(DomainDto domainDto) {
         // initialize domain config
-        Map<String, String> valuesMap = new HashMap<>();
-        valuesMap.put("domain", domain);
-        valuesMap.put("ip", ip);
-        valuesMap.put("port", port);
-        valuesMap.put("name", name);
-        valuesMap.put("larkAuth", isLarkAuth ? "import larkoauth" : "");
-        StringSubstitutor sub = new StringSubstitutor(valuesMap);
-        String resolvedString = sub.replace(DOMAIN_CONFIG_TEMPLATE);
-
+        String newConfig = getCaddyConfig(domainDto);
         // add domain config string to caddyfile
         String content = getCaddyfileContent();
-        content += resolvedString;
+        content += newConfig;
 
         // write caddyfile
         Resource resource = new FileSystemResource(caddyfilePath);
@@ -123,6 +98,39 @@ public class AdminController {
             logger.error("write caddyfile error", e);
             return false;
         }
+    }
+
+    private String getCaddyConfig(DomainDto domainDto) {
+        Map<String, String> valuesMap = new HashMap<>();
+        switch (domainDto.type) {
+            case RESERVE_PROXY -> {
+                valuesMap.put("domain", domainDto.domain);
+                valuesMap.put("ip", domainDto.ip);
+                valuesMap.put("port", domainDto.port);
+                valuesMap.put("name", domainDto.name);
+                valuesMap.put("larkAuth", domainDto.larkAuth ? "import larkoauth" : "");
+            }
+            case CUSTOM_RESPOND -> {
+                valuesMap.put("domain", domainDto.domain);
+                valuesMap.put("respond", domainDto.respond);
+                valuesMap.put("name", domainDto.name);
+                valuesMap.put("larkAuth", domainDto.larkAuth ? "import larkoauth" : "");
+            }
+            case FILE_SERVER -> {
+                valuesMap.put("domain", domainDto.domain);
+                valuesMap.put("root", domainDto.root);
+                valuesMap.put("name", domainDto.name);
+                valuesMap.put("larkAuth", domainDto.larkAuth ? "import larkoauth" : "");
+            }
+            default -> {
+                logger.error("unknown domain type: {}", domainDto.type);
+            }
+        }
+        ;
+
+        StringSubstitutor sub = new StringSubstitutor(valuesMap);
+        String resolvedString = sub.replace(ConfigType.getConfig(domainDto.type));
+        return resolvedString;
     }
 
     private String getCaddyfileContent() {
@@ -160,7 +168,7 @@ public class AdminController {
 
     private String reloadConfig() {
         logger.info("reload config");
-        // exec shell command
+        // exec command
         String command = CADDY_RELOAD_COMMAND;
         logger.info("exec command: {}", command);
         try {
