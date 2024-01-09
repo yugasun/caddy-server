@@ -1,3 +1,8 @@
+server:
+    port: 8080
+    # Forward headers strategy, make swagger servers url support https
+    forward-headers-strategy: framework
+
 spring:
   security:
     user:
