@@ -3,6 +3,8 @@ package com.example.caddyserver.dto;
 import com.example.caddyserver.ApiError;
 import com.example.caddyserver.ApiException;
 import com.example.caddyserver.config.ConfigType;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * @author yugasun
@@ -10,20 +12,36 @@ import com.example.caddyserver.config.ConfigType;
  **/
 public class DomainDto implements ValidateDto {
 
+    @Getter
+    @Setter
     public ConfigType type;
 
+    @Getter
+    @Setter
     public String domain;
 
+    @Getter
+    @Setter
     public String ip;
 
+    @Getter
+    @Setter
     public String port;
 
+    @Getter
+    @Setter
     public String name;
 
+    @Getter
+    @Setter
     public String root;
 
+    @Getter
+    @Setter
     public String respond;
 
+    @Getter
+    @Setter
     public Boolean larkAuth;
 
     @Override

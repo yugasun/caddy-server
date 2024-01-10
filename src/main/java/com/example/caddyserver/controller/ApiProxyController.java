@@ -44,7 +44,7 @@ public class ApiProxyController {
     }
 
     @GetMapping("/config")
-    public Map<String, String> getConfig(@RequestParam String path) {
+    public Map<String, Object> getConfig(@RequestParam String path) {
         return apiProxyService.getConfig(path);
     }
 }

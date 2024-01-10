@@ -17,6 +17,7 @@ public enum ConfigType {
     public static String getConfig(ConfigType type) {
         return switch (type) {
             case RESERVE_PROXY -> """
+                    ###START###
                     ${domain} {
                         import favicon
                         import encode
@@ -31,8 +32,10 @@ public enum ConfigType {
                             }
                         }
                     }
+                    ###END###
                                         """;
             case CUSTOM_RESPOND -> """
+                    ###START###
                     ${domain} {
                         import favicon
                         import encode
@@ -44,8 +47,10 @@ public enum ConfigType {
                             respond "${respond}"
                         }
                     }
+                    ###END###
                                 """;
             case FILE_SERVER -> """
+                    ###START###
                     ${domain} {
                          import favicon
                          import encode
@@ -58,6 +63,7 @@ public enum ConfigType {
                                 file_server
                          }
                      }
+                     ###END###
                      """;
             default -> throw new IllegalStateException("Unexpected value: " + type);
         };
