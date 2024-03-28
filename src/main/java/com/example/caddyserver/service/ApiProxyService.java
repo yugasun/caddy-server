@@ -169,9 +169,7 @@ public class ApiProxyService {
         } else {
             // check domain exist
             List<String> domains = getHosts().get("result");
-            if (isDomainExist(domain)) {
-                isExist = domains != null && domains.contains(domain);
-            }
+            isExist = domains != null && domains.contains(domain);
         }
 
         return isExist;
