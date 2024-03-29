@@ -1,14 +1,18 @@
 package com.example.caddyserver.controller;
 
+import com.example.caddyserver.dto.ApiResponse;
 import com.example.caddyserver.dto.DeleteDomainDto;
 import com.example.caddyserver.dto.DomainDto;
+import com.example.caddyserver.exception.ExceptionEnum;
 import com.example.caddyserver.service.ApiProxyService;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 import java.util.Map;
 
@@ -25,52 +29,64 @@ public class AdminController {
     private ApiProxyService apiProxyService;
 
     @PostMapping("/domain")
-    public Map<String, String> addDomain(@RequestBody DomainDto domainDto) {
+    public ApiResponse addDomain(@Valid @RequestBody DomainDto domainDto) {
         logger.info("add domain: {}", domainDto);
 
         domainDto.name = domainDto.name != null && !domainDto.name.isEmpty() ? domainDto.name : domainDto.domain;
 
         // check domain exist
         if (apiProxyService.isDomainExist(domainDto.domain)) {
-            return Map.of("result", "domain exist");
+            return ApiResponse.error(ExceptionEnum.DOMAIN_EXISTED);
         }
 
         Boolean updateResult = apiProxyService.updateCaddyfile(domainDto);
         String result = updateResult ? apiProxyService.reloadConfig() : "error";
-        return Map.of("result", result);
+        return ApiResponse.success(result);
     }
 
     @DeleteMapping("/domain")
-    public Map<String, String> deleteDomain(@RequestBody DeleteDomainDto domainDto) {
+    public ApiResponse deleteDomain(@RequestBody DeleteDomainDto domainDto) {
         if (!apiProxyService.isDev()) {
             // check domain exist
-            if (!apiProxyService.isDomainExist(domainDto.domain)) {
-                return Map.of("result", "domain not exist");
+            ApiResponse checkResult = checkDomainExist(domainDto.domain);
+            if (checkResult != null) {
+                return checkResult;
             }
         }
 
         logger.info("delete domain: {}", domainDto.domain);
         Boolean updateResult = apiProxyService.deleteFromCaddyfile(domainDto.domain);
         String result = updateResult ? apiProxyService.reloadConfig() : "error";
-        return Map.of("result", result);
+        return ApiResponse.success(result);
+    }
+
+    private ApiResponse checkDomainExist(String domain) {
+        if (!apiProxyService.isDomainExist(domain)) {
+            return ApiResponse.error(ExceptionEnum.DOMAIN_NOT_EXIST);
+        }
+        return null;
     }
 
     @PutMapping("/domain")
-    public Map<String, String> updateDomain(@RequestBody DomainDto domainDto) {
+    public ApiResponse updateDomain(@Valid @RequestBody DomainDto domainDto) {
         logger.info("update domain: {}", domainDto);
 
         // check domain exist
-        if (!apiProxyService.isDomainExist(domainDto.domain)) {
-            return Map.of("result", "domain not exist");
+        ApiResponse checkResult = checkDomainExist(domainDto.domain);
+        if (checkResult != null) {
+            return checkResult;
         }
 
         Boolean updateResult = apiProxyService.deleteFromCaddyfile(domainDto.domain);
         if (!updateResult) {
-            return Map.of("result", "error");
+            return ApiResponse.error(ExceptionEnum.DELETE_DOMAIN_ERROR);
         }
         updateResult = apiProxyService.updateCaddyfile(domainDto);
         String result = updateResult ? apiProxyService.reloadConfig() : "error";
-        return Map.of("result", result);
+        if (result == "error") {
+            return ApiResponse.error(ExceptionEnum.UPDATE_DOMAIN_ERROR);
+        }
+        return ApiResponse.success(result);
     }
 
     @GetMapping("/domain")
@@ -80,13 +96,16 @@ public class AdminController {
     }
 
     @GetMapping("/reload")
-    public Map<String, String> reload() {
+    public ApiResponse reload() {
         logger.info("reload");
-        return Map.of("result", apiProxyService.reloadConfig());
+        String result = apiProxyService.reloadConfig();
+        return ApiResponse.success(result);
     }
 
     @GetMapping("/caddy/file")
-    public Map<String, String> getCaddyFile() {
-        return apiProxyService.getCaddyfile();
+    public ApiResponse getCaddyFile() {
+        logger.info("get caddy file");
+        String content = apiProxyService.getCaddyfileContent();
+        return ApiResponse.success(content);
     }
 }
