@@ -15,7 +15,7 @@ mvn clean package
 mvn clean package
 
 # Run
-java -jar target/caddy-server-0.0.1-SNAPSHOT.jar
+./start.sh
 ```
 
 ### Deploy by Docker

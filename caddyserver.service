@@ -1,0 +1,13 @@
+[Unit]
+# 服务名称，可自定义
+Description = Caddy server
+After = network.target syslog.target
+Wants = network.target
+
+[Service]
+Type = simple
+# 启动frps的命令，需修改为您的frps的安装路径
+ExecStart = /home/data/caddy-server/start.sh
+
+[Install]
+WantedBy = multi-user.target
